@@ -18,7 +18,7 @@ echo "Se esta ejecutando el STAGE 1 [Init]"
 
 # Comprobar existencia e instalación de herramientas
 
-tools=("git" "php-fpm" "apache2" "mariadb-server" "php libapache2-mod-php php-mysql php-mbstring php-zip php-gd php-json php-curl")
+tools=("git" "php7.4-fpm" "apache2" "mariadb-server" "php libapache2-mod-php php-mysql php-mbstring php-zip php-gd php-json php-curl")
 
 for tool in "${tools[@]}"; do
     if ! command -v "$tool" &> /dev/null; then
@@ -42,14 +42,16 @@ for service in "${services[*]}"; do
 done
 
 # Configuración de base de datos
-
+if mysql -e "SHOW DATABASES LIKE devopstravel" | grep devopstravel &> /dev/null; then
+    echo "La base de datos devopstravel ya existe. No se ejecutará la creación."
+else
 mysql -e "
 CREATE DATABASE devopstravel;
 CREATE USER 'codeuser'@'localhost' IDENTIFIED BY 'codepass';
 GRANT ALL PRIVILEGES ON *.* TO 'codeuser'@'localhost';
 FLUSH PRIVILEGES;"
-
 mysql < bootcamp-devops-2023/app-295devops-travel/database/devopstravel.sql
+fi
 
 ### STAGE 2 [BUILD]
 echo "Se esta ejecutando el STAGE 2 [Build]"
@@ -78,8 +80,6 @@ else
     git clone -b clase2-linux-bash --single-branch https://github.com/roxsross/bootcamp-devops-2023.git
     cp -r bootcamp-devops-2023/$repo/* /var/www/html
     mv /var/www/html/index.html /var/www/html/index.html.bkp
-    
-    #sed -i "s/\(\$dbPassword = \).*/\1\"codepass\";/" /var/wwww/html/config.php
     echo "El repositorio se ha clonado en el sistema."
 fi
 
@@ -88,15 +88,13 @@ archivo_config="/var/www/html/config.php"
 
 # Verificar si el archivo de configuración existe
 if [ ! -f "$archivo_config" ]; then
+    # Actualizar la contraseña en el archivo de configuración
+    sed -i "s/\(\$dbPassword = \).*/\1\"$nueva_contrasena\";/" "$archivo_config"
+    echo "La contraseña en $archivo_config se ha actualizado correctamente."
+else
     echo "Error: El archivo de configuración $archivo_config no existe."
     exit 1
 fi
-
-# Actualizar la contraseña en el archivo de configuración
-sed -i "s/\(\$dbPassword = \).*/\1\"$nueva_contrasena\";/" "$archivo_config"
-
-echo "La contraseña en $archivo_config se ha actualizado correctamente."
-
 
 ## STAGE 3: [Deploy]
 echo "Se esta ejecutando el STAGE 3 [Deploy]"
@@ -104,3 +102,6 @@ echo "Se esta ejecutando el STAGE 3 [Deploy]"
 systemctl reload apache2
 
 # STAGE 4: [Notify]
+chmod +x ./discord.sh
+./discord.sh
+
