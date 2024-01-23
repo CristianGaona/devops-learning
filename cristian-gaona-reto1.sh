@@ -18,22 +18,21 @@ echo "Se esta ejecutando el STAGE 1 [Init]"
 
 # Comprobar existencia e instalación de herramientas
 
-tools=("git" "php" "apache2" "mariadb")
+tools=("git" "php-fpm" "apache2" "mariadb-server" "php libapache2-mod-php php-mysql php-mbstring php-zip php-gd php-json php-curl")
 
 for tool in "${tools[@]}"; do
     if ! command -v "$tool" &> /dev/null; then
         echo "$tool no está instalado en el sistema."
-    
+        apt install -y $tool
     else
         echo "$tool está instalado en el sistema."
-        apt-get install -y $tool
     fi
 done
-services=("php" "apache2" "mariadb")
+services=("php7.4-fpm" "apache2" "mariadb")
 
-for service in "${services[@]}"; do
+for service in "${services[*]}"; do
     
-    if ! systemctl is-active --quiet "$service"  && ! service is-enable --quiet "$service"; then
+    if ! systemctl is-active --quiet "$service"  && ! systemctl is-enabled --quiet "$service"; then
         echo "$service no está activo en el sistema."
         systemctl start $service
         systemctl enable $service
@@ -50,21 +49,58 @@ CREATE USER 'codeuser'@'localhost' IDENTIFIED BY 'codepass';
 GRANT ALL PRIVILEGES ON *.* TO 'codeuser'@'localhost';
 FLUSH PRIVILEGES;"
 
-mysql < database/devopstravel.sql
+mysql < bootcamp-devops-2023/app-295devops-travel/database/devopstravel.sql
 
 ### STAGE 2 [BUILD]
 echo "Se esta ejecutando el STAGE 2 [Build]"
 
-# Clonar el repositorio de la aplicación
+# Archivo de configuración
+archivo_configuracion="/etc/apache2/mods-enabled/dir.conf"
+
+# Verificar si el archivo de configuración existe
+if [ ! -f "$archivo_configuracion" ]; then
+    echo "Error: El archivo de configuración $archivo_configuracion no existe."
+    exit 1
+fi
+
+# Realizar los cambios en el archivo de configuración
+sed -i '/<IfModule mod_dir.c>/,/<\/IfModule>/ s/DirectoryIndex index.php index.html index.cgi index.pl index.xhtml index.htm/DirectoryIndex index.php index.html index.cgi index.pl index.xhtml index.htm/' "$archivo_configuracion"
+
+echo "Se han realizado los cambios en el archivo $archivo_configuracion"
+
+# Verificar existencia de repositorio
+if [ -d "bootcamp-devops-2023" ]; then
+    echo  "La carpeta existe, se actualiza repositorio"
+    git --git-dir=bootcamp-devops-2023/.git --work-tree=bootcamp-devops-2023 checkout clase2-linux-bash
+    git --git-dir=bootcamp-devops-2023/.git --work-tree=bootcamp-devops-2023 pull origin clase2-linux-bash
+else
+    # Clonar el repositorio de la aplicación
+    git clone -b clase2-linux-bash --single-branch https://github.com/roxsross/bootcamp-devops-2023.git
+    cp -r bootcamp-devops-2023/$repo/* /var/www/html
+    mv /var/www/html/index.html /var/www/html/index.html.bkp
+    
+    #sed -i "s/\(\$dbPassword = \).*/\1\"codepass\";/" /var/wwww/html/config.php
+    echo "El repositorio se ha clonado en el sistema."
+fi
+
+nueva_contrasena="codepass"
+archivo_config="/var/www/html/config.php"
+
+# Verificar si el archivo de configuración existe
+if [ ! -f "$archivo_config" ]; then
+    echo "Error: El archivo de configuración $archivo_config no existe."
+    exit 1
+fi
+
+# Actualizar la contraseña en el archivo de configuración
+sed -i "s/\(\$dbPassword = \).*/\1\"$nueva_contrasena\";/" "$archivo_config"
+
+echo "La contraseña en $archivo_config se ha actualizado correctamente."
 
 
-git clone -b clase2-linux-bash --single-branch https://github.com/roxsross/bootcamp-devops-2023.git
-cp -r bootcamp-devops-2023/$repo/* /var/www/html
-mv /var/www/html/index.html /var/www/html/index.html.bkp
-sed -i 's/""/"codepass"/g' /var/wwww/html/
-echo "El repositorio se ha clonado en el sistema."
-
-
+## STAGE 3: [Deploy]
+echo "Se esta ejecutando el STAGE 3 [Deploy]"
 # Reiniciar servicios
+systemctl reload apache2
 
-sudo systemctl restart apache2
+# STAGE 4: [Notify]
