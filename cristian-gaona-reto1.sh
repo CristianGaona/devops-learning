@@ -28,6 +28,7 @@ for tool in "${tools[@]}"; do
         echo "$tool está instalado en el sistema."
     fi
 done
+
 services=("php7.4-fpm" "apache2" "mariadb")
 
 for service in "${services[*]}"; do
@@ -42,16 +43,16 @@ for service in "${services[*]}"; do
 done
 
 # Configuración de base de datos
-if mysql -e "SHOW DATABASES LIKE devopstravel" | grep devopstravel &> /dev/null; then
-    echo "La base de datos devopstravel ya existe. No se ejecutará la creación."
-else
+#if mysql -e "SHOW DATABASES LIKE devopstravel" | grep devopstravel &> /dev/null; then
+    #echo "La base de datos devopstravel ya existe. No se ejecutará la creación."
+#else
 mysql -e "
 CREATE DATABASE devopstravel;
 CREATE USER 'codeuser'@'localhost' IDENTIFIED BY 'codepass';
 GRANT ALL PRIVILEGES ON *.* TO 'codeuser'@'localhost';
 FLUSH PRIVILEGES;"
+#fi
 mysql < bootcamp-devops-2023/app-295devops-travel/database/devopstravel.sql
-fi
 
 ### STAGE 2 [BUILD]
 echo "Se esta ejecutando el STAGE 2 [Build]"
@@ -87,7 +88,7 @@ nueva_contrasena="codepass"
 archivo_config="/var/www/html/config.php"
 
 # Verificar si el archivo de configuración existe
-if [ ! -f "$archivo_config" ]; then
+if [ -f "$archivo_config" ]; then
     # Actualizar la contraseña en el archivo de configuración
     sed -i "s/\(\$dbPassword = \).*/\1\"$nueva_contrasena\";/" "$archivo_config"
     echo "La contraseña en $archivo_config se ha actualizado correctamente."
@@ -102,6 +103,7 @@ echo "Se esta ejecutando el STAGE 3 [Deploy]"
 systemctl reload apache2
 
 # STAGE 4: [Notify]
-chmod +x ./discord.sh
-./discord.sh
+echo "Se esta ejecutando el STAGE 4 [Notify]"
+#chmod +x ./discord.sh
+#./discord.sh
 

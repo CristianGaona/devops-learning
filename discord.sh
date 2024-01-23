@@ -6,16 +6,17 @@ DISCORD="https://discord.com/api/webhooks/1154865920741752872/au1jkQ7v9LgQJ131qF
 # Ruta al directorio del repositorio
 REPO_DIR="devops-learning"
 if [ -d "devops-learning" ]; then
-  cd "$REPO_DIR"
-  git pull
-  cd ..
+    cd "$REPO_DIR"
+    git checkout ejercicio-1-automatizacion
+    git pull
+    cd ..
 else
-  git clone https://github.com/CristianGaona/devops-learning.git
+    git clone https://github.com/CristianGaona/devops-learning.git
 fi
 
 # Verifica si se proporcionó el argumento del directorio del repositorio
 if [ $# -ne 1 ]; then
-  echo "Uso: $0 The-DevOps-Journey-101"
+  echo "Uso: $0 devops-learning"
   exit 1
 fi
 
