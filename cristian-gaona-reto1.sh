@@ -125,6 +125,6 @@ systemctl reload apache2
 echo "=============================================================================================="
 echo "Ejecución del STAGE 4 [Notify]"
 echo "=============================================================================================="
-#chmod +x ./discord.sh
-#./discord.sh
+chmod +x ./discord.sh
+./discord.sh devops-learning
 

@@ -12,6 +12,9 @@ if [ -d "devops-learning" ]; then
     cd ..
 else
     git clone https://github.com/CristianGaona/devops-learning.git
+    cd "$REPO_DIR"
+    git checkout ejercicio-1-automatizacion
+    cd ..
 fi
 
 # Verifica si se proporcionó el argumento del directorio del repositorio
