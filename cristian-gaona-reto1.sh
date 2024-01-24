@@ -1,6 +1,5 @@
 #!/bin/bash
 
-repo="app-295devops-travel"
 #Validar el usuario root o super usuario
 
 if [ "$EUID" -ne 0 ]; then
@@ -11,17 +10,20 @@ fi
 echo "El usuario cuenta con los privilegios necesarios. Se procede a realizar las respectivas configuraciones e instalaciones"
 
 ### STAGE 1 [INITIALIZATION]
-echo "Se esta ejecutando el STAGE 1 [Init]"
+echo "=============================================================================================="
+echo "Ejecución del STAGE 1 [Init]"
+echo "=============================================================================================="
+
 # Actualizar el sistema
  sudo apt-get update
  echo "El servidor se encuentra actualizado"
 
 # Comprobar existencia e instalación de herramientas
-
 tools=("git" "php7.4-fpm" "apache2" "mariadb-server" "php libapache2-mod-php php-mysql php-mbstring php-zip php-gd php-json php-curl")
 
 for tool in "${tools[@]}"; do
     if ! command -v "$tool" &> /dev/null; then
+        sleep 1
         echo "$tool no está instalado en el sistema."
         apt install -y $tool
     else
@@ -34,6 +36,7 @@ services=("php7.4-fpm" "apache2" "mariadb")
 for service in "${services[*]}"; do
     
     if ! systemctl is-active --quiet "$service"  && ! systemctl is-enabled --quiet "$service"; then
+        sleep 1
         echo "$service no está activo en el sistema."
         systemctl start $service
         systemctl enable $service
@@ -42,20 +45,33 @@ for service in "${services[*]}"; do
     fi
 done
 
+database_exists=$(mysql -e "SHOW DATABASES LIKE 'devopstravel';")
 # Configuración de base de datos
-#if mysql -e "SHOW DATABASES LIKE devopstravel" | grep devopstravel &> /dev/null; then
-    #echo "La base de datos devopstravel ya existe. No se ejecutará la creación."
-#else
-mysql -e "
-CREATE DATABASE devopstravel;
-CREATE USER 'codeuser'@'localhost' IDENTIFIED BY 'codepass';
-GRANT ALL PRIVILEGES ON *.* TO 'codeuser'@'localhost';
-FLUSH PRIVILEGES;"
-#fi
+if [ -n "$database_exists" ]; then
+    echo "La base de datos devopstravel ya existe. No se ejecutará la creación."
+else
+    mysql -e "
+    CREATE DATABASE devopstravel;
+    CREATE USER 'codeuser'@'localhost' IDENTIFIED BY 'codepass';
+    GRANT ALL PRIVILEGES ON *.* TO 'codeuser'@'localhost';
+    FLUSH PRIVILEGES;"
+    echo "La base de datos devopstravel se ha creado correctamente."
+fi
+
 mysql < bootcamp-devops-2023/app-295devops-travel/database/devopstravel.sql
 
+echo "*****************************************************************************"
+echo "Se verifica la creación de la base de datos devopstravel con una conuslta"
+echo "*****************************************************************************"
+
+ mysql -e  "use devopstravel; select * from user; "
+
+echo "*****************************************************************************"
+
 ### STAGE 2 [BUILD]
-echo "Se esta ejecutando el STAGE 2 [Build]"
+echo "=============================================================================================="
+echo "Ejecución del STAGE 2 [Build]"
+echo "=============================================================================================="
 
 # Archivo de configuración
 archivo_configuracion="/etc/apache2/mods-enabled/dir.conf"
@@ -72,6 +88,7 @@ sed -i '/<IfModule mod_dir.c>/,/<\/IfModule>/ s/DirectoryIndex index.php index.h
 echo "Se han realizado los cambios en el archivo $archivo_configuracion"
 
 # Verificar existencia de repositorio
+repo="app-295devops-travel"
 if [ -d "bootcamp-devops-2023" ]; then
     echo  "La carpeta existe, se actualiza repositorio"
     git --git-dir=bootcamp-devops-2023/.git --work-tree=bootcamp-devops-2023 checkout clase2-linux-bash
@@ -84,8 +101,8 @@ else
     echo "El repositorio se ha clonado en el sistema."
 fi
 
-nueva_contrasena="codepass"
 archivo_config="/var/www/html/config.php"
+nueva_contrasena="codepass"
 
 # Verificar si el archivo de configuración existe
 if [ -f "$archivo_config" ]; then
@@ -98,12 +115,16 @@ else
 fi
 
 ## STAGE 3: [Deploy]
-echo "Se esta ejecutando el STAGE 3 [Deploy]"
+echo "=============================================================================================="
+echo "Ejecución del STAGE 3 [Deploy]"
+echo "=============================================================================================="
 # Reiniciar servicios
 systemctl reload apache2
 
 # STAGE 4: [Notify]
-echo "Se esta ejecutando el STAGE 4 [Notify]"
+echo "=============================================================================================="
+echo "Ejecución del STAGE 4 [Notify]"
+echo "=============================================================================================="
 #chmod +x ./discord.sh
 #./discord.sh
 

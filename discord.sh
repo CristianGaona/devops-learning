@@ -8,7 +8,7 @@ REPO_DIR="devops-learning"
 if [ -d "devops-learning" ]; then
     cd "$REPO_DIR"
     git checkout ejercicio-1-automatizacion
-    git pull
+    git pull origin ejercicio-1-automatizacion
     cd ..
 else
     git clone https://github.com/CristianGaona/devops-learning.git
@@ -43,9 +43,6 @@ else
   DEPLOYMENT_INFO="La página web $WEB_URL no está en línea."
 fi
 
-# Obtén información del repositorio
-
-
 # Construye el mensaje
 MESSAGE="$DEPLOYMENT_INFO2\n$DEPLOYMENT_INFO\n$COMMIT\n$AUTHOR\n$REPO_URL\n$DESCRIPTION"
 
@@ -54,3 +51,5 @@ curl -X POST -H "Content-Type: application/json" \
      -d '{
        "content": "'"${MESSAGE}"'"
      }' "$DISCORD"
+
+cd ..
