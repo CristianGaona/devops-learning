@@ -18,27 +18,29 @@ agregar_tarea() {
 listar_tareas() {
     echo "Listado de tareas"
     echo "ID | Descripcion | Fecha de vencimiento | Completada"
-    echo "--------------------------------------------------"
-    while IFS="|" read  id descripcion fecha; do
+    echo "-----------------------------------------------------------------------------------"
+    while IFS="|" read id descripcion fecha completada; do
         tarea_id=$(echo $id)
         descripcion=$(echo $descripcion)
         fecha=$(echo $fecha)
-        echo "$tarea_id | $descripcion | $fecha"
-    done < $TASK_FILE
+        completada=$(echo $completada)
+        echo "$tarea_id | $descripcion | $fecha | $completada"
+        echo "---------------------------------------------------------------------------------"
+    done < "$TASK_FILE"
+    
 }
 
-marcar() {
+marcar(){
     echo "Ingrese el ID de la tarea a marcar como completada: "
     read tarea_id
-    #sed -i "s/^$tarea_id.*/$tarea_id | $(sed -n "$tarea_id p" $TASK_FILE | cut -d "|" -f2) | $(sed -n "$tarea_id p" $TASK_FILE | cut -d "|" -f3) | Si/g" $TASK_FILE
-    sed -i "Si/g" $TASK_FILE
-    echo "Tarea $tarea_id marcada como completada"
+    sed -i "/^$tarea_id/s/$/ | Tarea completada/" "$TASK_FILE"
+    echo "Tarea $tarea_id marcada como completada."
 }
 
-eliminar(){
+eliminar() {
     echo "Ingrese el ID de la tarea a eliminar: "
     read tarea_id
-    sed -i "s/^$tarea_id/d" $TASK_FILE
+    sed -i "/^$tarea_id/d" $TASK_FILE
     echo "Tarea $tarea_id eliminada"
 }
 
